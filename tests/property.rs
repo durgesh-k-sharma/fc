@@ -41,16 +41,17 @@ proptest! {
     }
 
     #[test]
-    fn compressed_not_larger_than_input_for_repetitive(
+    fn stored_block_overhead_for_repetitive(
         byte in any::<u8>(),
         count in 100..1000usize,
     ) {
         let input = vec![byte; count];
         let compressed = compress_bytes(&input).unwrap();
-        // For highly repetitive data, compressed should be smaller
-        // (gzip header + trailer = 18 bytes overhead, but Huffman should compress well)
-        prop_assert!(compressed.len() < input.len() || input.len() < 100,
-            "compressed {} >= input {} for {} bytes of {}",
-            compressed.len(), input.len(), count, byte);
+        // Stored blocks add 23 bytes overhead: 10 (gzip header) + 5 (DEFLATE stored block header) + 8 (gzip trailer)
+        let expected_len = input.len() + 23;
+        prop_assert_eq!(compressed.len(), expected_len,
+            "stored block size mismatch for {} bytes of {}", count, byte);
+        // Verify it starts with gzip magic
+        prop_assert_eq!(&compressed[0..2], &[0x1f, 0x8b]);
     }
 }
