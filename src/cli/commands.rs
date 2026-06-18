@@ -4,8 +4,8 @@ use std::path::Path;
 use std::time::Instant;
 
 use crate::codec::huffman_codec::HuffmanCodec;
-use crate::codec::huffman_codec::{compress_bytes, decompress_bytes};
-use crate::codec::r#trait::{AlgorithmId, CompressionAlgorithm};
+use crate::codec::huffman_codec::decompress_bytes;
+use crate::codec::r#trait::CompressionAlgorithm;
 use crate::format::header::GzipHeader;
 
 pub fn run_compress(
@@ -36,7 +36,7 @@ pub fn run_compress(
         eprintln!("Input: {} bytes", data.len());
     }
 
-    let codec = HuffmanCodec::new();
+    let codec = HuffmanCodec;
 
     let start = Instant::now();
     let compressed = codec.compress(&data)
@@ -64,7 +64,7 @@ pub fn run_compress(
 pub fn run_decompress(
     input: &str,
     output: Option<&str>,
-    verify: bool,
+    _verify: bool,
     verbose: bool,
 ) -> Result<()> {
     let input_path = Path::new(input);
@@ -109,12 +109,12 @@ pub fn run_decompress(
 pub fn run_benchmark(
     input: &str,
     iterations: usize,
-    compare: bool,
+    _compare: bool,
 ) -> Result<()> {
     let data = fs::read(input)
         .with_context(|| format!("failed to read input: {}", input))?;
 
-    let codec = HuffmanCodec::new();
+    let codec = HuffmanCodec;
 
     let mut compress_times = Vec::new();
     let mut decompress_times = Vec::new();

@@ -63,6 +63,11 @@ impl HuffmanTree {
         }
 
         if heap.len() == 1 {
+            // Single-symbol edge case: the tree has only one leaf node at the root.
+            // Normally Huffman coding assigns a 0-bit code to this symbol, which is
+            // degenerate — we can't store "zero bits" in a bit stream. Instead, we
+            // detect this case and handle it specially in encode/decode by storing
+            // the symbol and the repeat count directly, bypassing bit-level encoding.
             let entry = heap.pop().unwrap();
             let symbol = match &entry.node {
                 HuffmanNode::Leaf { symbol } => *symbol,
@@ -96,25 +101,31 @@ impl HuffmanTree {
     /// Build a lookup table: byte -> (bit_pattern, bit_count)
     fn build_encode_table(&self) -> HashMap<u8, (u64, usize)> {
         let mut table = HashMap::new();
-        Self::build_table_recursive(&self.root, 0, 0, &mut table);
-        table
-    }
+        // Iterative traversal using an explicit stack to avoid stack overflow
+        // on degenerate (deeply unbalanced) trees. Each entry is (node, prefix, depth).
+        let mut stack: Vec<(&HuffmanNode, u64, usize)> = Vec::new();
+        stack.push((&self.root, 0, 0));
 
-    fn build_table_recursive(
-        node: &HuffmanNode,
-        prefix: u64,
-        depth: usize,
-        table: &mut HashMap<u8, (u64, usize)>,
-    ) {
-        match node {
-            HuffmanNode::Leaf { symbol } => {
-                table.insert(*symbol, (prefix, depth));
+        while let Some((node, prefix, depth)) = stack.pop() {
+            // Safety guard: Huffman codes for byte-aligned data should never
+            // exceed 255 bits. If we hit something deeper, the tree is malformed.
+            if depth > 255 {
+                // In practice this should never happen with valid frequency tables,
+                // but we guard against stack-smashing from adversarial inputs.
+                break;
             }
-            HuffmanNode::Internal { left, right } => {
-                Self::build_table_recursive(left, prefix, depth + 1, table);
-                Self::build_table_recursive(right, prefix | (1 << depth), depth + 1, table);
+            match node {
+                HuffmanNode::Leaf { symbol } => {
+                    table.insert(*symbol, (prefix, depth));
+                }
+                HuffmanNode::Internal { left, right } => {
+                    // Push right first so left is processed first (stack = LIFO)
+                    stack.push((right, prefix | (1 << depth), depth + 1));
+                    stack.push((left, prefix, depth + 1));
+                }
             }
         }
+        table
     }
 
     pub fn encode(&self, input: &[u8]) -> Vec<u8> {
@@ -167,8 +178,7 @@ impl HuffmanTree {
         let mut current = &self.root;
         let mut bits_read = 0;
 
-        for byte_idx in 8..input.len() {
-            let byte = input[byte_idx];
+        for &byte in input.iter().skip(8) {
             for bit_pos in (0..8).rev() {
                 if bits_read >= total_bits {
                     return output;

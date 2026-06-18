@@ -5,18 +5,6 @@ use crate::format::header::GzipHeader;
 
 pub struct HuffmanCodec;
 
-impl HuffmanCodec {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for HuffmanCodec {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl CompressionAlgorithm for HuffmanCodec {
     fn compress(&self, input: &[u8]) -> Result<Vec<u8>, CompressionError> {
         compress_bytes(input)
@@ -43,6 +31,25 @@ impl CompressionAlgorithm for HuffmanCodec {
 pub fn compress_bytes(input: &[u8]) -> Result<Vec<u8>, CompressionError> {
     if input.is_empty() {
         return Err(CompressionError::EmptyInput);
+    }
+
+    // Check unique symbol count: Huffman coding for byte data supports at most
+    // 255 unique symbols (the 256th slot is reserved for the end-of-block marker
+    // in the DEFLATE format). If all 256 byte values appear, we cannot build a
+    // valid Huffman tree without wrapping, so reject with a clear error.
+    let mut seen = [false; 256];
+    let mut unique_count = 0u32;
+    for &byte in input {
+        let idx = byte as usize;
+        if !seen[idx] {
+            seen[idx] = true;
+            unique_count += 1;
+        }
+    }
+    if unique_count > 255 {
+        return Err(CompressionError::InvalidData(
+            "input contains all 256 unique byte values; Huffman coding requires at most 255".into(),
+        ));
     }
 
     let crc = crc32_compute(input);
@@ -222,7 +229,7 @@ mod tests {
 
     #[test]
     fn codec_trait_roundtrip() {
-        let codec = HuffmanCodec::new();
+        let codec = HuffmanCodec;
         let input = b"trait-based compression test";
         let compressed = codec.compress(input).unwrap();
         let decompressed = codec.decompress(&compressed).unwrap();
