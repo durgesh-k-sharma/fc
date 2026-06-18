@@ -1,6 +1,0 @@
-TupleUnion<((u32, Arc<A>), (u32, Arc<B>), (u32, Arc<C>), (u32, Arc<D>), (u32, Arc<E>), (u32, Arc<F>))>
-TupleUnion<((u32, Arc<A>), (u32, Arc<B>), (u32, Arc<C>), (u32, Arc<D>), (u32, Arc<E>), (u32, Arc<F>), (u32, Arc<G>))>
-TupleUnion<((u32, Arc<A>), (u32, Arc<B>), (u32, Arc<C>), (u32, Arc<D>), (u32, Arc<E>), (u32, Arc<F>), (u32, Arc<G>), (u32, Arc<H>))>
-TupleUnion<((u32, Arc<A>), (u32, Arc<B>), (u32, Arc<C>), (u32, Arc<D>), (u32, Arc<E>), (u32, Arc<F>), (u32, Arc<G>), (u32, Arc<H>), (u32, Arc<I>))>
-TupleUnion<((u32, Arc<A>), (u32, Arc<B>), (u32, Arc<C>), (u32, Arc<D>), (u32, Arc<E>), (u32, Arc<F>), (u32, Arc<G>), (u32, Arc<H>), (u32, Arc<I>), (u32, Arc<J>))>
-proptest::strategy::Flatten<proptest::strategy::Map<proptest::strategy::Just<Vec<u8>>, {closure@tests/property.rs:14:39: 14:47}>>
