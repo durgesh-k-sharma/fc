@@ -1,0 +1,24 @@
+[package]
+name = "fc"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+thiserror = "2"
+anyhow = "1"
+rayon = "1.10"
+crc32fast = "1.4"
+tabular = "0.2"
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
+assert_cmd = "2"
+predicates = "3"
+criterion = "0.5"
+
+[[bench]]
+name = "compress_bench"
+harness = false
